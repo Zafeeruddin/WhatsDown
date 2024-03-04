@@ -46,7 +46,7 @@ io.on("connection", (socket) => {
     });
     // Define a function to handle chat messages
     const handleChatMessage = (msg, client, server) => __awaiter(void 0, void 0, void 0, function* () {
-        console.log(msg);
+        console.log("inside chat message", msg);
         //checking if client and server exists
         const serverUser = yield prisma.register.findUnique({
             where: {
@@ -117,6 +117,12 @@ io.on("connection", (socket) => {
     // Remove the chat-message event listener when the client disconnects
     socket.on('disconnect', () => {
         console.log('A user disconnected');
+        const index = userMaps.findIndex(user => user.id === socket.id);
+        // If the user is found, remove them from the array
+        if (index !== -1) {
+            userMaps.splice(index, 1);
+            console.log("User disconnected. Updated userMaps:", userMaps);
+        }
         socket.off("chat-message", handleChatMessage);
     });
 });

@@ -31,14 +31,30 @@ const checkEmail=async (req:any,res:any,next:any)=>{
 userRouter.use(cors())
 userRouter.post("/signup",checkEmail,async (req:any,res:any)=>{
     const {username,email,password}:SignUpParams=req.body
+    const getUser=await prisma.register.findUnique({
+        where:{
+            username:username
+        }
+    })
+    if(getUser){
+        res.status(411).json({
+            "message":"Username already exists"
+        })
+    }
+    console.log("username",username)
+    console.log("email",email)
+    console.log(username,email,password)
     const parse=userSignup.safeParse({
         username:username,
-        email:email,
+        email:email.toLowerCase(),
         password:password
     })
     if(!parse.success){
+        let response:string=parse.error.errors[0].message
+        response=response.replace("String",parse.error.errors[0].path[0])
         console.log(parse.error.errors[0])
-        res.json({"message":parse.error.errors[0]})
+        console.log(response)
+        res.json({"message":response})
         return 
     }
     
@@ -79,7 +95,7 @@ userRouter.post("/login",async(req:any,res:any)=>{
     console.log("isUser pwd",passwordMatch)
 
     if(!passwordMatch){
-        res.json({"message":"Passwords don't match"})
+        res.json({"message":"Incorrect password"})
         return
     }
 
@@ -89,7 +105,7 @@ userRouter.post("/login",async(req:any,res:any)=>{
     res.status(200).json({
         "message":"User Signed",
         "user":isUser,
-        "token":token
+        "token":token,
     })
 
     
@@ -179,7 +195,6 @@ userRouter.get("/getAllChats",authMiddleware,async(req:any,res:any)=>{
             username:serverUser
         }
     })
-    console.log("this mf doesn't reaches here server now",server)
     const client=req.userId
 
     const getRelation=await prisma.userRelations.findFirst({
@@ -196,14 +211,25 @@ userRouter.get("/getAllChats",authMiddleware,async(req:any,res:any)=>{
         })
         return
     }
-    const getMessages=await prisma.chatbox.findMany({
+    const clientMessages=await prisma.chatbox.findMany({
         where:{
             client:client,
             server:server?.id
         }
     })
-    console.log("messages",getMessages)
+    const serverMessages=await prisma.chatbox.findMany({
+        where:{
+            client:server?.id,
+            server:client
+        }
+    })
+    
+    
+    console.log("client messages",clientMessages)
+    console.log("server messages",serverMessages)
     res.status(200).json({
-        "messages":getMessages
+        "clientMessages":clientMessages,
+        "serverMessages":serverMessages,
+        "serverId":server?.id
     })
 })

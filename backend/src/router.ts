@@ -49,7 +49,7 @@ io.on("connection", (socket) => {
     
     // Define a function to handle chat messages
     const handleChatMessage = async (msg:any,client:string,server:string) => {
-        console.log(msg);
+        console.log("inside chat message",msg);
 
 
        //checking if client and server exists
@@ -95,8 +95,8 @@ io.on("connection", (socket) => {
         if(clientUser && serverUser){
         const message=await prisma.chatbox.create({
             data:{
-                client:clientUser.id,
-                server:serverUser.id,
+                client:msg.client,
+                server:msg.server,
                 message:msg.message,
                 timestamp:msg.timestamp
             }
@@ -131,6 +131,14 @@ io.on("connection", (socket) => {
     // Remove the chat-message event listener when the client disconnects
     socket.on('disconnect', () => {
         console.log('A user disconnected');
+        const index = userMaps.findIndex(user => user.id === socket.id);
+    
+    // If the user is found, remove them from the array
+    if (index !== -1) {
+        userMaps.splice(index, 1);
+        console.log("User disconnected. Updated userMaps:", userMaps);
+    }
+    
         socket.off("chat-message", handleChatMessage);
     });
 })

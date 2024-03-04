@@ -40,14 +40,30 @@ const checkEmail = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
 exports.userRouter.use(cors());
 exports.userRouter.post("/signup", checkEmail, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username, email, password } = req.body;
+    const getUser = yield prisma.register.findUnique({
+        where: {
+            username: username
+        }
+    });
+    if (getUser) {
+        res.status(411).json({
+            "message": "Username already exists"
+        });
+    }
+    console.log("username", username);
+    console.log("email", email);
+    console.log(username, email, password);
     const parse = types_1.userSignup.safeParse({
         username: username,
-        email: email,
+        email: email.toLowerCase(),
         password: password
     });
     if (!parse.success) {
+        let response = parse.error.errors[0].message;
+        response = response.replace("String", parse.error.errors[0].path[0]);
         console.log(parse.error.errors[0]);
-        res.json({ "message": parse.error.errors[0] });
+        console.log(response);
+        res.json({ "message": response });
         return;
     }
     try {
@@ -83,14 +99,14 @@ exports.userRouter.post("/login", (req, res) => __awaiter(void 0, void 0, void 0
     const passwordMatch = bcrypt.compareSync(password, isUser.password);
     console.log("isUser pwd", passwordMatch);
     if (!passwordMatch) {
-        res.json({ "message": "Passwords don't match" });
+        res.json({ "message": "Incorrect password" });
         return;
     }
     var token = "Bearer " + jwt.sign({ userID: isUser.id }, exports.SECRET_KEY);
     res.status(200).json({
         "message": "User Signed",
         "user": isUser,
-        "token": token
+        "token": token,
     });
 }));
 exports.userRouter.get("/getUsers", Authenticate_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -166,7 +182,6 @@ exports.userRouter.get("/getAllChats", Authenticate_1.authMiddleware, (req, res)
             username: serverUser
         }
     });
-    console.log("this mf doesn't reaches here server now", server);
     const client = req.userId;
     const getRelation = yield prisma.userRelations.findFirst({
         where: {
@@ -182,14 +197,23 @@ exports.userRouter.get("/getAllChats", Authenticate_1.authMiddleware, (req, res)
         });
         return;
     }
-    const getMessages = yield prisma.chatbox.findMany({
+    const clientMessages = yield prisma.chatbox.findMany({
         where: {
             client: client,
             server: server === null || server === void 0 ? void 0 : server.id
         }
     });
-    console.log("messages", getMessages);
+    const serverMessages = yield prisma.chatbox.findMany({
+        where: {
+            client: server === null || server === void 0 ? void 0 : server.id,
+            server: client
+        }
+    });
+    console.log("client messages", clientMessages);
+    console.log("server messages", serverMessages);
     res.status(200).json({
-        "messages": getMessages
+        "clientMessages": clientMessages,
+        "serverMessages": serverMessages,
+        "serverId": server === null || server === void 0 ? void 0 : server.id
     });
 }));

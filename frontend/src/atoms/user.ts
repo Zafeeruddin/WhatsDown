@@ -4,6 +4,12 @@ import {atom, selector} from "recoil"
 
 
 export type Message={
+    client:number,
+    server:number
+    message:string,
+    timestamp:string
+  }
+export type MessageSent={
     message:string,
     timestamp:string
   }
@@ -22,6 +28,28 @@ export const email=atom({
     key:"email",
     default:""
 })
+
+export const clientId=atom({
+    key:"cid",
+    default:0
+})
+
+export const serverId=atom({
+    key:"sid",
+    default:0
+})
+
+export const userClick=atom({
+    key:"userClciked",
+    default:false
+})
+
+
+export const profileClick=atom({
+    key:"profileClick",
+    default:false
+})
+
 export const password=atom({
     key:"password",
     default:""
@@ -42,15 +70,6 @@ export const messages=atom<string>({
     default:""
 })
 
-export const clientTwoMessages=atom<String[]>({
-    key:"clientOne",
-    default:[]
-})
-
-export const clientOneMessages=atom<String[]>({
-    key:"clientTwo",
-    default:[]
-})
 
 
 export const messagesState = atom<Message[]>({
